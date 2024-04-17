@@ -641,15 +641,10 @@ func (e expandEnv) User() (string, error) {
 	return e.user, nil
 }
 
-func templateReplace(long string) string {
-	return long
-}
-
 var expandFuncMap = texttemplate.FuncMap{
-	"PathEscape":      url.PathEscape,
-	"QueryEscape":     url.QueryEscape,
-	"TrimSuffix":      strings.TrimSuffix,
-	"TemplateReplace": templateReplace,
+	"PathEscape":  url.PathEscape,
+	"QueryEscape": url.QueryEscape,
+	"TrimSuffix":  strings.TrimSuffix,
 }
 
 // expandLink returns the expanded long URL to redirect to, executing any
