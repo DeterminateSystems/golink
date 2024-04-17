@@ -543,6 +543,9 @@ func serveGo(w http.ResponseWriter, r *http.Request) {
 
 	var target *url.URL
 
+	// We need to treat the PostHog URLs as a completely different species here because they
+	// don't use query params in a standard way. Standard URLs have this structure: https://example.com?foo=bar.
+	// But PostHog uses # as a kind makeshift separator, which forces us to treat the entire URL as the base URL.
 	if link.Short == "ph-wid" {
 		windowId := env.query.Get("window_id")
 		if windowId == "" {
