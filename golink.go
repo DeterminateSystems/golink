@@ -691,15 +691,7 @@ func expandLink(long string, env expandEnv) (*url.URL, error) {
 		query := u.Query()
 		for key, values := range env.query {
 			for _, v := range values {
-				if key == "window_id" {
-					windowIdEncoded := url.QueryEscape(v)
-
-					value := "%7B%22kind%22%3A%22DataTableNode%22%2C%22full%22%3Atrue%2C%22source%22%3A%7B%22kind%22%3A%22EventsQuery%22%2C%22select%22%3A%5B%22*%22%2C%22event%22%2C%22person%22%2C%22coalesce(properties.%24current_url%2C%20properties.%24screen_name)%20--%20Url%20%2F%20Screen%22%2C%22properties.%24lib%22%2C%22timestamp%22%2C%22properties.ingestion_project%22%2C%22properties.status%22%5D%2C%22orderBy%22%3A%5B%22timestamp%20DESC%22%5D%2C%22after%22%3A%222024-04-17T09%3A07%3A09.000Z%22%2C%22properties%22%3A%5B%7B%22key%22%3A%22%24window_id%22%2C%22value%22%3A%5B%22" + windowIdEncoded + "%22%5D%2C%22operator%22%3A%22exact%22%2C%22type%22%3A%22event%22%7D%5D%2C%22before%22%3A%222024-04-17T09%3A07%3A11.000Z%22%7D%2C%22propertiesViaUrl%22%3Atrue%2C%22showSavedQueries%22%3Atrue%2C%22showPersistentColumnConfigurator%22%3Atrue%7D"
-
-					query.Add("q", value)
-				} else {
-					query.Add(key, v)
-				}
+				query.Add(key, v)
 			}
 		}
 		u.RawQuery = query.Encode()
