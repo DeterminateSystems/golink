@@ -641,10 +641,15 @@ func (e expandEnv) User() (string, error) {
 	return e.user, nil
 }
 
+func templateReplace(long string) string {
+	return long
+}
+
 var expandFuncMap = texttemplate.FuncMap{
-	"PathEscape":  url.PathEscape,
-	"QueryEscape": url.QueryEscape,
-	"TrimSuffix":  strings.TrimSuffix,
+	"PathEscape":      url.PathEscape,
+	"QueryEscape":     url.QueryEscape,
+	"TrimSuffix":      strings.TrimSuffix,
+	"TemplateReplace": templateReplace,
 }
 
 // expandLink returns the expanded long URL to redirect to, executing any
@@ -662,15 +667,23 @@ func expandLink(long string, env expandEnv) (*url.URL, error) {
 		}
 	}
 
+	// Here, we replace any string of the form @foo@ in the underlying URL
+	// with the value of foo=... in the query params. Thus, the URL
+	// https://example.com/@thing@ would be transformed into
+	// https://example.com/replaced if thing=replaced is supplied as a query
+	// param.
 	for key, values := range env.query {
-		key = fmt.Sprintf("@%s@", key)
+		replaceKey := fmt.Sprintf("@%s@", key)
 
-		// this should never happen
+		// This should never happen in a query string, as even when
+		// you have foo=&bar=baz, foo is parsed as []string{""}. But
+		// we should panic with a message if we encounter some edge
+		// case we're not aware of.
 		if len(values) == 0 {
-			return nil, errors.New("no value provided for key")
+			panic("malformed query string")
 		}
 
-		long = strings.Replace(long, key, values[0], -1)
+		long = strings.Replace(long, replaceKey, values[0], -1)
 	}
 
 	tmpl, err := texttemplate.New("").Funcs(expandFuncMap).Parse(long)
