@@ -668,23 +668,22 @@ func expandLink(long string, env expandEnv) (*url.URL, error) {
 	// https://example.com/replaced if thing=replaced is supplied as a query
 	// param.
 	for key, values := range env.query {
-		// This should never happen in a query string, as even when
-		// you have foo=&bar=baz, foo is parsed as []string{""}. But
-		// we should panic with a message if we encounter some edge
-		// case we're not aware of.
-		if len(values) == 0 {
-			panic("malformed query string")
-		}
-
 		// Here, we detect if the original URL contains a pattern of @${key}@. If so,
 		// we substitute it and remove it from the query params to be passed on.
 		// Otherwise we ignore it in this iterator.
 		pattern := fmt.Sprintf("@%s@", key)
 
 		if strings.Contains(long, pattern) {
+			// If subsitution is happening, removing the param from those to be passed
+			// on to the final URL
 			env.query.Del(key)
 
-			long = strings.Replace(long, pattern, values[0], -1)
+			// Here, we perform the substitution for each value of the param.
+			// In general, we should avoid substitutions with multiple values like
+			// foo=bar,baz, as baz here would have no effect.
+			for _, value := range values {
+				long = strings.Replace(long, pattern, value, -1)
+			}
 		}
 	}
 
