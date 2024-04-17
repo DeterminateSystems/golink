@@ -679,15 +679,12 @@ func expandLink(long string, env expandEnv) (*url.URL, error) {
 		// Here, we detect if the original URL contains a pattern of @${key}@. If so,
 		// we substitute it and remove it from the query params to be passed on.
 		// Otherwise we ignore it in this iterator.
-		pattern := fmt.Sprintf("@%s@", regexp.QuoteMeta(key))
-		re := regexp.MustCompile(pattern)
+		pattern := fmt.Sprintf("@%s@", key)
 
-		if re.MatchString(long) {
+		if strings.Contains(long, pattern) {
 			env.query.Del(key)
 
-			replaceKey := fmt.Sprintf("@%s@", key)
-
-			long = strings.Replace(long, replaceKey, values[0], -1)
+			long = strings.Replace(long, pattern, values[0], -1)
 		}
 	}
 
