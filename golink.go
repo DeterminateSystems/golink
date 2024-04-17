@@ -52,8 +52,6 @@ const (
 	//
 	// [Fetch Spec]: https://fetch.spec.whatwg.org
 	secHeaderName = "Sec-Golink"
-
-	postHogTemplateString = "https://us.posthog.com/project/59410/events#q=%7B%22kind%22%3A%22DataTableNode%22%2C%22full%22%3Atrue%2C%22source%22%3A%7B%22kind%22%3A%22EventsQuery%22%2C%22select%22%3A%5B%22*%22%2C%22event%22%2C%22person%22%2C%22coalesce(properties.%24current_url%2C%20properties.%24screen_name)%20--%20Url%20%2F%20Screen%22%2C%22properties.%24lib%22%2C%22timestamp%22%2C%22properties.ingestion_project%22%2C%22properties.status%22%5D%2C%22orderBy%22%3A%5B%22timestamp%20DESC%22%5D%2C%22after%22%3A%222024-04-17T09%3A07%3A09.000Z%22%2C%22properties%22%3A%5B%7B%22key%22%3A%22%24window_id%22%2C%22value%22%3A%5B%22@window_id@%22%5D%2C%22operator%22%3A%22exact%22%2C%22type%22%3A%22event%22%7D%5D%2C%22before%22%3A%222024-04-17T09%3A07%3A11.000Z%22%7D%2C%22propertiesViaUrl%22%3Atrue%2C%22showSavedQueries%22%3Atrue%2C%22showPersistentColumnConfigurator%22%3Atrue%7D"
 )
 
 var (
@@ -66,14 +64,7 @@ var (
 	hostname          = flag.String("hostname", defaultHostname, "service name")
 	resolveFromBackup = flag.String("resolve-from-backup", "", "resolve a link from snapshot file and exit")
 	allowUnknownUsers = flag.Bool("allow-unknown-users", false, "allow unknown users to save links")
-
-	postHogLink = &Link{
-		Short:    "ph-wid",
-		Long:     postHogTemplateString,
-		Created:  time.Now(),
-		LastEdit: time.Now(),
-		Owner:    "detsys",
-	}
+	seedJsonPath      = flag.String("seed-json-path", "", "path to a seed JSON file")
 )
 
 var stats struct {
@@ -129,9 +120,25 @@ func Run() error {
 		return fmt.Errorf("NewSQLiteDB(%q): %w", *sqlitefile, err)
 	}
 
-	log.Println("adding /ph-wid seed link to database")
-	if err := db.Save(postHogLink); err != nil {
-		log.Fatal("failed to add seed link")
+	if *seedJsonPath != "" {
+		log.Printf("seeding the db with json from %s", *seedJsonPath)
+
+		jsonFile, err := os.ReadFile(*seedJsonPath)
+		if err != nil {
+			return fmt.Errorf("failed to load seed json: %v", err)
+		}
+
+		var seedJson seedJson
+		if err := json.Unmarshal(jsonFile, &seedJson); err != nil {
+			return fmt.Errorf("failed to parse seed json: %v", err)
+		}
+
+		for _, link := range seedJson.Links {
+			log.Printf("adding seed link with short %s\n", link.Short)
+			if err := db.Save(&link); err != nil {
+				log.Fatal("failed to add seed link")
+			}
+		}
 	}
 
 	if *snapshot != "" {
@@ -295,6 +302,10 @@ type deleteData struct {
 	Short string
 	Long  string
 	XSRF  string
+}
+
+type seedJson struct {
+	Links []Link `json:"links"`
 }
 
 var xsrfKey string
