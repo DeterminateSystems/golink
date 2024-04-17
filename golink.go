@@ -66,6 +66,14 @@ var (
 	hostname          = flag.String("hostname", defaultHostname, "service name")
 	resolveFromBackup = flag.String("resolve-from-backup", "", "resolve a link from snapshot file and exit")
 	allowUnknownUsers = flag.Bool("allow-unknown-users", false, "allow unknown users to save links")
+
+	postHogLink = &Link{
+		Short:    "ph-wid",
+		Long:     postHogTemplateString,
+		Created:  time.Now(),
+		LastEdit: time.Now(),
+		Owner:    "detsys",
+	}
 )
 
 var stats struct {
@@ -121,16 +129,8 @@ func Run() error {
 		return fmt.Errorf("NewSQLiteDB(%q): %w", *sqlitefile, err)
 	}
 
-	seedLink := &Link{
-		Short:    "ph-wid",
-		Long:     postHogTemplateString,
-		Created:  time.Now(),
-		LastEdit: time.Now(),
-		Owner:    "detsys",
-	}
-
 	log.Println("adding /ph-wid seed link to database")
-	if err := db.Save(seedLink); err != nil {
+	if err := db.Save(postHogLink); err != nil {
 		log.Fatal("failed to add seed link")
 	}
 
@@ -668,8 +668,6 @@ func expandLink(long string, env expandEnv) (*url.URL, error) {
 	// https://example.com/replaced if thing=replaced is supplied as a query
 	// param.
 	for key, values := range env.query {
-		replaceKey := fmt.Sprintf("@%s@", key)
-
 		// This should never happen in a query string, as even when
 		// you have foo=&bar=baz, foo is parsed as []string{""}. But
 		// we should panic with a message if we encounter some edge
@@ -678,7 +676,16 @@ func expandLink(long string, env expandEnv) (*url.URL, error) {
 			panic("malformed query string")
 		}
 
-		long = strings.Replace(long, replaceKey, values[0], -1)
+		pattern := fmt.Sprintf("@%s@", regexp.QuoteMeta(key))
+		re := regexp.MustCompile(pattern)
+
+		if re.MatchString(long) {
+			env.query.Del(key)
+
+			replaceKey := fmt.Sprintf("@%s@", key)
+
+			long = strings.Replace(long, replaceKey, values[0], -1)
+		}
 	}
 
 	tmpl, err := texttemplate.New("").Funcs(expandFuncMap).Parse(long)
