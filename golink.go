@@ -541,23 +541,7 @@ func serveGo(w http.ResponseWriter, r *http.Request) {
 	cu, _ := currentUser(r)
 	env := expandEnv{Now: time.Now().UTC(), Path: remainder, user: cu.login, query: r.URL.Query()}
 
-	var target *url.URL
-
-	// We need to treat the PostHog URLs as a completely different species here because they
-	// don't use query params in a standard way. Standard URLs have this structure: https://example.com?foo=bar.
-	// But PostHog uses # as a kind makeshift separator, which forces us to treat the entire URL as the base URL.
-	if link.Short == "ph-wid" {
-		windowId := env.query.Get("window_id")
-		if windowId == "" {
-			http.Error(w, "no window id supplied", http.StatusBadRequest)
-		}
-		windowIdEncoded := url.QueryEscape(windowId)
-		linkLong := strings.Replace(link.Long, "@window_id@", windowIdEncoded, -1)
-		target, err = url.Parse(linkLong)
-	} else {
-		target, err = expandLink(link.Long, env)
-	}
-
+	target, err := expandLink(link.Long, env)
 	if err != nil {
 		log.Printf("expanding %q: %v", link.Long, err)
 		if errors.Is(err, errNoUser) {
@@ -677,6 +661,18 @@ func expandLink(long string, env expandEnv) (*url.URL, error) {
 			long += "{{with .Path}}/{{.}}{{end}}"
 		}
 	}
+
+	for key, values := range env.query {
+		key = fmt.Sprintf("@%s@", key)
+
+		// this should never happen
+		if len(values) == 0 {
+			return nil, errors.New("no value provided for key")
+		}
+
+		long = strings.Replace(long, key, values[0], -1)
+	}
+
 	tmpl, err := texttemplate.New("").Funcs(expandFuncMap).Parse(long)
 	if err != nil {
 		return nil, err
