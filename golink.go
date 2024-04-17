@@ -64,7 +64,6 @@ var (
 	hostname          = flag.String("hostname", defaultHostname, "service name")
 	resolveFromBackup = flag.String("resolve-from-backup", "", "resolve a link from snapshot file and exit")
 	allowUnknownUsers = flag.Bool("allow-unknown-users", false, "allow unknown users to save links")
-	seedJsonPath      = flag.String("seed-json-path", "", "path to a seed JSON file")
 )
 
 var stats struct {
@@ -120,21 +119,18 @@ func Run() error {
 		return fmt.Errorf("NewSQLiteDB(%q): %w", *sqlitefile, err)
 	}
 
-	if *seedJsonPath != "" {
-		log.Printf("seeding the db with json from %s", *seedJsonPath)
+	seedJson := os.Getenv("GOLINK_SEED_JSON")
 
-		jsonFile, err := os.ReadFile(*seedJsonPath)
-		if err != nil {
-			return fmt.Errorf("failed to load seed json: %v", err)
-		}
+	if seedJson != "" {
+		log.Println("seeding the db with json")
 
-		var seedJson seedJson
-		if err := json.Unmarshal(jsonFile, &seedJson); err != nil {
+		var seedDbJson seedDbJson
+		if err := json.Unmarshal([]byte(seedJson), &seedDbJson); err != nil {
 			return fmt.Errorf("failed to parse seed json: %v", err)
 		}
 
-		for _, link := range seedJson.Links {
-			log.Printf("adding seed link with short %s\n", link.Short)
+		for _, link := range seedDbJson.Links {
+			log.Printf("adding link with short `%s\n`", link.Short)
 			if err := db.Save(&link); err != nil {
 				log.Fatal("failed to add seed link")
 			}
@@ -304,7 +300,7 @@ type deleteData struct {
 	XSRF  string
 }
 
-type seedJson struct {
+type seedDbJson struct {
 	Links []Link `json:"links"`
 }
 
