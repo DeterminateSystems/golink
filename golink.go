@@ -676,6 +676,9 @@ func expandLink(long string, env expandEnv) (*url.URL, error) {
 			panic("malformed query string")
 		}
 
+		// Here, we detect if the original URL contains a pattern of @${key}@. If so,
+		// we substitute it and remove it from the query params to be passed on.
+		// Otherwise we ignore it in this iterator.
 		pattern := fmt.Sprintf("@%s@", regexp.QuoteMeta(key))
 		re := regexp.MustCompile(pattern)
 
