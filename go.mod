@@ -4,7 +4,7 @@ go 1.22.0
 
 require (
 	github.com/google/go-cmp v0.6.0
-	golang.org/x/net v0.25.0
+	golang.org/x/net v0.33.0
 	modernc.org/sqlite v1.19.4
 	tailscale.com v1.60.1
 )
