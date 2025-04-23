@@ -30,6 +30,7 @@
             src = pkgs.nix-gitignore.gitignoreSource [ ] ./.;
 
             vendorHash = "sha256-3IR1B+gIxWX55KultwuuxO50b/ujTynbSbSBSPGMoI4=";
+            goSum = ./go.sum;
           };
         };
     }
