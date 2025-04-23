@@ -40,7 +40,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add --update --ignore-removal .
-            git commit -m "Automatically fix Nix hashes"
+            git commit -m "[dependabot skip] Automatically fix Nix hashes"
             git push origin "$GITHUB_HEAD_REF"
           fi
 
