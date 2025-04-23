@@ -24,7 +24,7 @@
           pkgs = nixpkgs.legacyPackages.${prev.system};
         in
         rec {
-          golink = pkgs.buildGo122Module rec {
+          golink = pkgs.buildGo124Module rec {
             pname = "golink";
             version = golinkVersion;
             src = pkgs.nix-gitignore.gitignoreSource [ ] ./.;
@@ -44,7 +44,7 @@
       in
       rec {
         # `nix develop`
-        devShell = pkgs.mkShell { buildInputs = [ pkgs.go_1_22 pkgs.flyctl ]; };
+        devShell = pkgs.mkShell { buildInputs = [ pkgs.go_1_24 pkgs.flyctl ]; };
 
         # `nix build`
         packages = with pkgs; {
