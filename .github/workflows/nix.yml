@@ -34,6 +34,8 @@ jobs:
           git fetch --depth=1 origin "$GITHUB_HEAD_REF"
           git checkout -B "$GITHUB_HEAD_REF" "${{ github.event.pull_request.head.sha }}"
 
+          determinate-nixd fix hashes --auto-apply
+
           if ! git diff --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
